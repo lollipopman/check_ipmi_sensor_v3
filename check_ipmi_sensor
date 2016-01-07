@@ -860,5 +860,11 @@ MAIN: {
 			print "(Status: $row->{'state'})\n";
 		}
 	}
+	if ( $verbosity > 1 ){
+		print "SEL Entries\n";
+		foreach my $row (@{$seloutput}){
+			print "$row->{'date'} | $row->{'time'} | $row->{'name'} | $row->{'type'} | $row->{'state'} | $row->{'event'}\n";
+		}
+	}
 	exit $exit;
 };
