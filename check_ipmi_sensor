@@ -136,6 +136,8 @@ sub get_help
        print the product serial number if it is available in the IPMI FRU data.
        For this purpose the tool 'ipmi-fru' is used. E.g.:
          IPMI Status: OK (9000096781)
+  [--onlywarn]
+       Never exit with a critical nagios state, only warning.
   [--nosel]
        turn off system event log checking via ipmi-sel. If there are
        unintentional entries in SEL, use 'ipmi-sel --clear'.
@@ -417,7 +419,7 @@ MAIN: {
 	my $zenoss = 0;
 	my @sel_sensor_types;
 	my $simulate = '';
-	my ($use_fru, $no_sel, $no_sudo, $use_thresholds, $no_thresholds, $sel_xfile, $s_xfile, $no_sensors);
+	my ($use_fru, $no_sel, $no_sudo, $use_thresholds, $no_thresholds, $sel_xfile, $s_xfile, $no_sensors, $only_warn);
 
 	#read in command line arguments and init hash variables with the given values from argv
 	if ( !( GetOptions(
@@ -431,6 +433,7 @@ MAIN: {
 		'T|sensor-types=s'	=> \@ipmi_sensor_types,
 		'ST|sel-sensor-types=s'	=> \@sel_sensor_types,
 		'fru'				=> \$use_fru,
+		'onlywarn'				=> \$only_warn,
 		'nosel'				=> \$no_sel,
 		'nosensors'		=> \$no_sensors,
 		'nosudo'			=> \$no_sudo,
@@ -733,7 +736,9 @@ MAIN: {
 		#check for warning sensors
 		if ( $row->{'state'} ne 'Nominal' && $row->{'state'} ne 'N/A' ){
 			$exit = 1 if $exit < 1;
-			$exit = 2 if $exit < 2 && $row->{'state'} ne 'Warning';
+			if(!$only_warn){
+				$exit = 2 if $exit < 2 && $row->{'state'} ne 'Warning';
+			}
 			#don't insert a , the first time
 			$w_sensors .= ", " unless $w_sensors eq '';
 			$w_sensors .= "$row->{'name'} = $row->{'state'}";
@@ -796,7 +801,9 @@ MAIN: {
 		}
 		if ($row->{'state'} ne 'Nominal'){
 			$exit = 1 if $exit < 1;
-			$exit = 2 if $exit < 2 && $row->{'state'} ne 'Warning';
+			if(!$only_warn){
+				$exit = 2 if $exit < 2 && $row->{'state'} ne 'Warning';
+			}
 			$w_sensors .= ", " unless $w_sensors eq '';
 			$w_sensors .= "$row->{'name'} = $row->{'state'}";
 			if( $verbosity ){
